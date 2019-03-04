@@ -15,8 +15,8 @@ def getStatsForDataframe(df):
     for col in df.columns:
         stats.append((col, df[col].nunique(), df[col].isnull().sum() * 100 / df.shape[0], df[col].value_counts(normalize=True, dropna=False).values[0] * 100, df[col].dtype))
         
-    stats_df = pd.DataFrame(stats, columns=['Feature', 'Unique_values', 'Percentage of missing values', 'Percentage of values in the biggest category', 'type'])
-    return stats_df.sort_values('Percentage of missing values', ascending=False)
+    stats_df = pd.DataFrame(stats, columns=['Feature', 'Unique_values', '%Missing', '%Biggest', 'type'])
+    return stats_df.sort_values('%Missing', ascending=False)
 
 def findPossibleOutliers(df, z_threshold=4):
     numeric_df = df._get_numeric_data()
@@ -48,3 +48,27 @@ def plot_category_percent_of_target(df, col, target, numberToShow=20):
     plt.xlabel('% of ' + target + '(target)')
     plt.ylabel(col)
     plt.show()
+
+
+def findProblematicColumns(df):
+    
+    stats = getStatsForDataframe(df)
+    problematic_columns = []
+    
+    for i in range(len(stats)):
+        currentRow = stats.iloc[i]
+        
+        # If one feature is dominated by a single value, it's a problem
+        if currentRow['Unique_values'] == 1:
+            problematic_columns.append(currentRow['Feature'])
+            
+        # If one feature is dominated by a single value, it's a problem
+        if currentRow['%Biggest'] > 99.9:
+            problematic_columns.append(currentRow['Feature'])
+            
+        # If one feature has entirely unique values it's (probably) a problem. 
+        # (Exception might be if there's a data leak in hashes)
+        if currentRow['Unique_values'] == len(df):
+            problematic_columns.append(currentRow['Feature'])
+            
+    return problematic_columns
