@@ -2,6 +2,11 @@ import pandas as pd
 from scipy import stats
 import numpy as np
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+pd.set_option('display.max_columns', 500)
+sns.set(font_scale=2)
 
 
 def getStatsForDataframe(df):
@@ -25,3 +30,21 @@ def findPossibleOutliers(df, z_threshold=4):
             possible_outliers.append(col)
 
     return possible_outliers
+
+
+def plot_category_percent_of_target(df, col, target, numberToShow=20):
+    fig, ax = plt.subplots(1, 1, figsize=(10, 7))
+    cat_percent = df[[col, target]].groupby(col, as_index=False).mean()
+    cat_size = df[col].value_counts().reset_index(drop=False)
+    cat_size.columns = [col, 'count']
+    cat_percent = cat_percent.merge(cat_size, on=col, how='left')
+    cat_percent[target] = cat_percent[target].fillna(0)
+    cat_percent = cat_percent.sort_values(by='count', ascending=False)[:numberToShow]
+    sns.barplot(ax=ax, x=target, y=col, data=cat_percent, order=cat_percent[col])
+
+    for i, p in enumerate(ax.patches):
+        ax.annotate('{}'.format(cat_percent['count'].values[i]), (p.get_width(), p.get_y()+0.5), fontsize=15)
+
+    plt.xlabel('% of ' + target + '(target)')
+    plt.ylabel(col)
+    plt.show()
