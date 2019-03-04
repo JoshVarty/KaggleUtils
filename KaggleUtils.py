@@ -78,7 +78,7 @@ def findProblematicColumns(df):
 """
 Some of our categories only exist in train or only exist in test. If these categories make up a large percentage of 
 our train or test data it can be difficult to train on them. This function automatically detects which columns 
-are made up of over 5% of values that don't exist in one or the other set.
+are made up of over 1% of values that don't exist in one or the other set.
 """
 def findProblematicCategories(train, test):
 
@@ -130,7 +130,7 @@ def findProblematicCategories(train, test):
         #This represents how many examples the missing categories make up our test set
         percentageOfMissingFromTest = countOfMissingFromTest/len(train)
         
-        if percentageOfMissingFromTrain > 0.05 or percentageOfMissingFromTest > 0.05:
+        if percentageOfMissingFromTrain > 0.01 or percentageOfMissingFromTest > 0.01:
             problematic_columns.append({"Column": column, 
                                         "%MissingFromTrain": percentageOfMissingFromTrain,
                                         "%MissingFromTest": percentageOfMissingFromTest })
