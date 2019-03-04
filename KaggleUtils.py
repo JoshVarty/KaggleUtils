@@ -72,3 +72,69 @@ def findProblematicColumns(df):
             problematic_columns.append(currentRow['Feature'])
             
     return problematic_columns
+
+
+
+"""
+Some of our categories only exist in train or only exist in test. If these categories make up a large percentage of 
+our train or test data it can be difficult to train on them. This function automatically detects which columns 
+are made up of over 5% of values that don't exist in one or the other set.
+"""
+def findProblematicCategories(train, test):
+
+    train_categorical = train.select_dtypes(include=["category"])
+    test_categorical = test.select_dtypes(include=["category"])
+    
+    #First we need to ensure that the categories match
+    if len(train_categorical.columns) != len(test_categorical.columns):
+        print("WARN: Train and test have a different categories.")
+        print("Train categories:", train_categorical.shape[1])
+        for i in train_categorical:
+            print(i)
+        print("Test categories:", test_categorical.shape[1])
+        for i in test_categorical:
+            print(i)
+        return
+    
+    if not np.all(train_categorical.columns == test_categorical.columns):
+        print("WARN: Train and test have a different categories.")
+        print("Train categories:", train_categorical.shape[1])
+        for i in train_categorical:
+            print(i)
+        print("Test categories:", test_categorical.shape[1])
+        for i in test_categorical:
+            print(i)
+        return 
+        
+    if train_categorical.empty:
+        print("No columns with type 'category' found. Make sure you convert 'object' columns to 'category'.")
+        
+    problematic_columns = []
+        
+    for column in train_categorical:
+        
+        train_cats = train[column].cat.categories
+        test_cats = test[column].cat.categories
+        
+        #Find category values that are missing from our training set
+        missingMask = ~test[column].cat.categories.isin(train[column].cat.categories)
+        missingFromTrain = test[column].cat.categories[missingMask]
+        countOfMissingFromTrain = len(test[test[column].isin(missingFromTrain)][column])
+        #This represents how many examples the missing categories make up our train set
+        percentageOfMissingFromTrain = countOfMissingFromTrain/len(test)
+        
+        #Find category values that are missing from test set
+        missingMask = ~train[column].cat.categories.isin(test[column].cat.categories)
+        missingFromTest = train[column].cat.categories[missingMask]
+        countOfMissingFromTest = len(train[train[column].isin(missingFromTest)])
+        #This represents how many examples the missing categories make up our test set
+        percentageOfMissingFromTest = countOfMissingFromTest/len(train)
+        
+        if percentageOfMissingFromTrain > 0.05 or percentageOfMissingFromTest > 0.05:
+            problematic_columns.append({"Column": column, 
+                                        "%MissingFromTrain": percentageOfMissingFromTrain,
+                                        "%MissingFromTest": percentageOfMissingFromTest })
+        
+    return problematic_columns
+
+    
